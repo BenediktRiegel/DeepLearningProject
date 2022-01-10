@@ -25,7 +25,7 @@ def bam():
         tf.keras.layers.Dense(512),
         tf.keras.layers.Dense(2, activation='sigmoid'),
     ])
-    return model
+    return model, 'padded'
 
 
 def short_bam():
@@ -41,16 +41,30 @@ def short_bam():
         tf.keras.layers.Dense(250),
         tf.keras.layers.Dense(2, activation='sigmoid'),
     ])
-    return model
+    return model, 'padded'
+
+
+def lstm():
+    model = keras.Sequential([
+        tf.keras.layers.InputLayer(input_shape=(None, 26), ragged=True),
+        tf.keras.layers.LSTM(250, return_sequences=True),
+        tf.keras.layers.LSTM(250, return_sequences=True),
+        tf.keras.layers.LSTM(250, return_sequences=True),
+        tf.keras.layers.LSTM(250, return_sequences=False),
+        tf.keras.layers.Dense(500),
+        tf.keras.layers.Dense(250),
+        tf.keras.layers.Dense(2, activation='sigmoid'),
+    ])
+    return model, 'ragged'
 
 
 def main():
+    print('get model')
+    model, mode = lstm()
+    print(model.summary())
     loader = load.serLoader()
-    X, y = loader.load_training_data()
-    # X, y = loader.load_short_training_data()
-    input_shape = X.shape[1:]
-    print(f"input_shape: {input_shape}")
-    model = short_bam()
+    print('load data')
+    X, y = loader.load_short_training_data(mode=mode)
     # for i in range(5):
     #     print(f"prev shape {X[i].shape}, predicted shape {model.predict(X[i].reshape((1, 1707, 26, 1))).shape}")
     model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.5, decay=0.1),

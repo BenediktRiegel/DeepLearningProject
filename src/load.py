@@ -33,7 +33,7 @@ class serLoader(Loader):
         sample = sample.reshape((sample.shape[0], sample.shape[1], 1))
         return sample
 
-    def load_X_y(self, path):
+    def load_padded_X_y(self, path):
         j = self.load_json(path)
         X = []
         y = []
@@ -45,7 +45,7 @@ class serLoader(Loader):
         y = np.array(y)
         return X, y
 
-    def load_X(self, path):
+    def load_padded_X(self, path):
         j = self.load_json(path)
         X = []
         maxdim = 1707
@@ -53,14 +53,41 @@ class serLoader(Loader):
             X.append(self.pad_sample(entry['features'], maxdim))
         return np.array(X)
 
-    def load_training_data(self):
-        return self.load_X_y(self.path / 'train.json')
+    def load_ragged_X_y(self, path):
+        j = self.load_json(path)
+        X = []
+        y = []
+        maxdim = 1707
+        for entry in j.values():
+            X.append(entry['features'])
+            y.append([entry['valence'], entry['activation']])
+        return tf.ragged.constant(X), tf.constant(y)
 
-    def load_dev_data(self):
-        return self.load_X(self.path / 'dev.json')
+    def load_ragged_X(self, path):
+        j = self.load_json(path)
+        X = []
+        maxdim = 1707
+        for entry in j.values():
+            X.append(entry['features'])
+        return tf.ragged.constant(X)
 
-    def load_short_training_data(self):
-        return self.load_X_y(self.path / 'short_train.json')
+    def load_training_data(self, mode='padded'):
+        if mode == 'padded':
+            return self.load_padded_X_y(self.path / 'train.json')
+        elif mode == 'ragged':
+            return self.load_ragged_X_y(self.path / 'train.json')
+
+    def load_dev_data(self, mode='padded'):
+        if mode == 'padded':
+            return self.load_padded_X(self.path / 'dev.json')
+        elif mode == 'ragged':
+            return self.load_ragged_X(self.path / 'dev.json')
+
+    def load_short_training_data(self, mode='padded'):
+        if mode == 'padded':
+            return self.load_padded_X_y(self.path / 'short_train.json')
+        elif mode == 'ragged':
+            return self.load_ragged_X_y(self.path / 'short_train.json')
 
     def create_short_version(self, num_entries):
         j = self.load_json(self.path / 'train.json')
