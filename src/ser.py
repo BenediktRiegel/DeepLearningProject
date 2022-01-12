@@ -83,6 +83,21 @@ def main():
     print(f"accuracy: {train_history.history['accuracy'][-1]}")
     model.save('./model')
 
+
+def argmax_vector(vec):
+    result = np.zeros(vec.shape)
+    result[vec.argmax()] = 1
+    return result
+
+
+def make_predictions(model_path, X):
+    model = keras.models.load_model(model_path)
+    y_ = model.predict(X)
+    y_ = [argmax_vector(el) for el in y_]
+    return np.array(y_)
+
+
+
 def test_LSTM():
     model = keras.Sequential([
         tf.keras.layers.LSTM(2, return_sequences=True),
@@ -106,4 +121,10 @@ def calc_mean():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    loader = load.serLoader()
+    model_path = '../some_models/LSTM_model1/'
+    X, y = loader.load_short_training_data(mode='ragged')
+    y_ = make_predictions(model_path, X)
+    print(y)
+    print(y_)
