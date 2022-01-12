@@ -26,6 +26,16 @@ class serLoader(Loader):
     def __init__(self):
         super().__init__('../data/SER')
 
+    def get_four_class_vector(self, valence, activation):
+        if valence==0 and activation==0:
+            return [1, 0, 0, 0]
+        elif valence==1 and activation==0:
+            return [0, 1, 0, 0]
+        elif valence==0 and activation==1:
+            return [0, 0, 1, 0]
+        else:
+            return [0, 0, 0, 1]
+
     def pad_sample(self, sample, maxdim):
         for i in range(maxdim - len(sample)):
             sample.append(np.zeros(26))
@@ -33,14 +43,17 @@ class serLoader(Loader):
         sample = sample.reshape((sample.shape[0], sample.shape[1], 1))
         return sample
 
-    def load_padded_X_y(self, path):
+    def load_padded_X_y(self, path, four_class):
         j = self.load_json(path)
         X = []
         y = []
         maxdim = 1707
         for entry in j.values():
             X.append(self.pad_sample(entry['features'], maxdim))
-            y.append([entry['valence'], entry['activation']])
+            if four_class:
+                y.append(self.get_four_class_vector(entry['valence'], entry['activation']))
+            else:
+                y.append([entry['valence'], entry['activation']])
         X = np.array(X)
         y = np.array(y)
         return X, y
@@ -53,14 +66,17 @@ class serLoader(Loader):
             X.append(self.pad_sample(entry['features'], maxdim))
         return np.array(X)
 
-    def load_ragged_X_y(self, path):
+    def load_ragged_X_y(self, path, four_class):
         j = self.load_json(path)
         X = []
         y = []
         maxdim = 1707
         for entry in j.values():
             X.append(entry['features'])
-            y.append([entry['valence'], entry['activation']])
+            if four_class:
+                y.append(self.get_four_class_vector(entry['valence'], entry['activation']))
+            else:
+                y.append([entry['valence'], entry['activation']])
         return tf.ragged.constant(X), tf.constant(y)
 
     def load_ragged_X(self, path):
@@ -71,11 +87,11 @@ class serLoader(Loader):
             X.append(entry['features'])
         return tf.ragged.constant(X)
 
-    def load_training_data(self, mode='padded'):
+    def load_training_data(self, mode='padded', four_class=False):
         if mode == 'padded':
-            return self.load_padded_X_y(self.path / 'train.json')
+            return self.load_padded_X_y(self.path / 'train.json', four_class)
         elif mode == 'ragged':
-            return self.load_ragged_X_y(self.path / 'train.json')
+            return self.load_ragged_X_y(self.path / 'train.json', four_class)
 
     def load_dev_data(self, mode='padded'):
         if mode == 'padded':
@@ -83,11 +99,11 @@ class serLoader(Loader):
         elif mode == 'ragged':
             return self.load_ragged_X(self.path / 'dev.json')
 
-    def load_short_training_data(self, mode='padded'):
+    def load_short_training_data(self, four_class, mode='padded'):
         if mode == 'padded':
-            return self.load_padded_X_y(self.path / 'short_train.json')
+            return self.load_padded_X_y(self.path / 'short_train.json', four_class)
         elif mode == 'ragged':
-            return self.load_ragged_X_y(self.path / 'short_train.json')
+            return self.load_ragged_X_y(self.path / 'short_train.json', four_class)
 
     def create_short_version(self, num_entries):
         j = self.load_json(self.path / 'train.json')
