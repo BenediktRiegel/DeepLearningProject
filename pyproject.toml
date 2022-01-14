@@ -8,6 +8,7 @@ authors = ["BenediktRiegel <Benedikt.Riegel@gmail.com>"]
 python = ">=3.8, <3.10"
 tensorflow = "^2.7.0"
 matplotlib = "^3.5.1"
+scikit-learn = "^1.0.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

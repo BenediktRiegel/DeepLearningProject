@@ -6,6 +6,9 @@ import load
 import tensorflow.keras as keras
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+import json
 
 
 def bam(four_class):
@@ -53,11 +56,12 @@ def short_bam(four_class):
 def lstm(four_class):
     model = keras.Sequential([
         tf.keras.layers.InputLayer(input_shape=(None, 26), ragged=True),
+        # tf.keras.layers.LSTM(250, activation='tanh', return_sequences=True),
         tf.keras.layers.LSTM(250, activation='tanh', return_sequences=True),
-        #tf.keras.layers.LSTM(250, activation='tanh', return_sequences=True),
         tf.keras.layers.LSTM(100, activation='tanh', return_sequences=True),
         tf.keras.layers.LSTM(100, activation='tanh', return_sequences=False),
-        tf.keras.layers.Dense(100, activation='tanh'),
+        tf.keras.layers.Dense(250, activation='tanh'),
+        tf.keras.layers.Dense(250, activation='tanh'),
         tf.keras.layers.Dense(50, activation='tanh'),
     ])
     if four_class:
@@ -110,6 +114,12 @@ def make_predictions(model_path, X):
     return np.array(y_)
 
 
+def print_metrics(y, y_):
+    y = np.array(y)
+    y_ = np.array(y_)
+    print(classification_report(y, y_))
+    print(confusion_matrix(y, y_))
+
 
 def test_LSTM():
     model = keras.Sequential([
@@ -133,11 +143,26 @@ def calc_mean():
     print(mean)
 
 
+def save_predictions(y, json_path):
+    j = dict()
+    if len(y[0]) == 4:
+        for i in range(len(y)):
+            j[str(i)] = {'valence': 0, 'activation': 0}
+            if y[i][1] == 1:
+                j[str(i)]['valence'] = 1
+            elif y[i][2] == 1:
+                j[str(i)]['activation'] = 1
+            elif y[i][3] == 1:
+                j[str(i)]['valence'] = 1
+                j[str(i)]['activation'] = 1
+    with open(json_path, 'w') as f:
+        json.dump(j, f)
+
+
 if __name__ == "__main__":
     #main()
     loader = load.serLoader()
-    model_path = '../some_models/LSTM_model1/'
-    X, y = loader.load_short_training_data(mode='ragged')
+    model_path = '../some_models/CNN_model1/model/'
+    X, y = loader.load_training_data(four_class=False, mode='padded')
     y_ = make_predictions(model_path, X)
-    print(y)
-    print(y_)
+    print_metrics(y, y_)
