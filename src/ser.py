@@ -107,11 +107,10 @@ def lstm(four_class):
     model = keras.Sequential([
         tf.keras.layers.InputLayer(input_shape=(None, 26), ragged=True),
         # tf.keras.layers.LSTM(250, activation='tanh', return_sequences=True),
-        tf.keras.layers.LSTM(250, activation='tanh', return_sequences=True),
-        tf.keras.layers.LSTM(100, activation='tanh', return_sequences=True),
-        tf.keras.layers.LSTM(100, activation='tanh', return_sequences=False),
-        tf.keras.layers.Dense(250, activation='tanh'),
-        tf.keras.layers.Dense(250, activation='tanh'),
+        tf.keras.layers.LSTM(256, activation='tanh', return_sequences=True),
+        tf.keras.layers.LSTM(256, activation='tanh', return_sequences=False),
+        tf.keras.layers.Dense(256, activation='tanh'),
+        tf.keras.layers.Dense(128, activation='tanh'),
         tf.keras.layers.Dense(50, activation='tanh'),
     ])
     if four_class:
@@ -141,7 +140,7 @@ def small_lstm(four_class):
 def main():
     print('get model')
     four_class = True
-    model, mode = milli_bam(four_class)
+    model, mode = lstm(four_class)
     print(model.summary())
     loader = load.serLoader()
     print('load data')
