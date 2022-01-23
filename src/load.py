@@ -72,7 +72,7 @@ class serLoader(Loader):
         y = []
         maxdim = 1707
         for entry in j.values():
-            X.append(entry['features'])
+            X.append([[el/100.0 for el in lis] for lis in entry['features']])
             if four_class:
                 y.append(self.get_four_class_vector(entry['valence'], entry['activation']))
             else:

@@ -53,6 +53,56 @@ def short_bam(four_class):
     return model, 'padded'
 
 
+def model6_bam(four_class):
+    model = keras.Sequential([
+        tf.keras.layers.Conv2D(32, kernel_size=(3, 26), activation='tanh', input_shape=(1707, 26, 1)),
+        tf.keras.layers.MaxPool2D(pool_size=(2, 1), strides=(2, 1)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(250, activation='tanh'),
+        tf.keras.layers.Dense(250, activation='tanh'),
+        tf.keras.layers.Dense(100, activation='tanh'),
+        tf.keras.layers.Dense(50, activation='tanh'),
+        tf.keras.layers.Dense(25, activation='tanh'),
+    ])
+    if four_class:
+        model.add(tf.keras.layers.Dense(4, activation='softmax'))
+    else:
+        model.add(tf.keras.layers.Dense(2, activation='sigmoid'))
+    return model, 'padded'
+
+
+def model8_bam(four_class):
+    model = keras.Sequential([
+        tf.keras.layers.Conv2D(64, kernel_size=(3, 26), activation='tanh', input_shape=(1707, 26, 1)),
+        tf.keras.layers.MaxPool2D(pool_size=(2, 1), strides=(2, 1)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(100, activation='tanh'),
+        tf.keras.layers.Dense(25, activation='tanh'),
+    ])
+    if four_class:
+        model.add(tf.keras.layers.Dense(4, activation='softmax'))
+    else:
+        model.add(tf.keras.layers.Dense(2, activation='sigmoid'))
+    return model, 'padded'
+
+
+def milli_bam(four_class):
+    model = keras.Sequential([
+        tf.keras.layers.Conv2D(32, kernel_size=(3, 26), strides=(1, 1), activation='tanh', input_shape=(1707, 26, 1)),
+        tf.keras.layers.MaxPool2D(pool_size=(4, 1), strides=(4, 1)),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(100, activation='tanh'),
+        tf.keras.layers.Dense(100, activation='tanh'),
+        tf.keras.layers.Dense(100, activation='tanh'),
+        tf.keras.layers.Dense(100, activation='tanh'),
+    ])
+    if four_class:
+        model.add(tf.keras.layers.Dense(4, activation='softmax'))
+    else:
+        model.add(tf.keras.layers.Dense(2, activation='sigmoid'))
+    return model, 'padded'
+
+
 def lstm(four_class):
     model = keras.Sequential([
         tf.keras.layers.InputLayer(input_shape=(None, 26), ragged=True),
@@ -71,24 +121,43 @@ def lstm(four_class):
     return model, 'ragged'
 
 
+def small_lstm(four_class):
+    model = keras.Sequential([
+        tf.keras.layers.InputLayer(input_shape=(None, 26), ragged=True),
+        # tf.keras.layers.LSTM(250, activation='tanh', return_sequences=True),
+        # tf.keras.layers.LSTM(26, activation='relu', return_sequences=True),
+        tf.keras.layers.LSTM(26, activation='relu', return_sequences=False),
+        tf.keras.layers.Dense(50, activation='relu'),
+        tf.keras.layers.Dense(50, activation='relu'),
+    ])
+    if four_class:
+        model.add(tf.keras.layers.Dense(4, activation='softmax'))
+    else:
+        model.add(tf.keras.layers.Dense(2, activation='sigmoid'))
+    return model, 'ragged'
+
+
+
 def main():
     print('get model')
     four_class = True
-    model, mode = lstm(four_class)
+    model, mode = milli_bam(four_class)
     print(model.summary())
     loader = load.serLoader()
     print('load data')
     # X, y = loader.load_short_training_data(mode=mode)
     X, y = loader.load_training_data(mode=mode, four_class=four_class)
     if four_class:
-        loss = keras.losses.CategoricalCrossentropy()
+        # loss = keras.losses.CategoricalCrossentropy()
+        print('using categorical crossentropy')
+        loss = 'categorical_crossentropy'
     else:
         loss = keras.losses.MeanSquaredError()
     model.compile(optimizer=keras.optimizers.SGD(learning_rate=0.2, decay=0.01),
                   loss=loss,
                   metrics=['accuracy'])
     print('start training')
-    train_history = model.fit(X, y, epochs=20, batch_size=5, verbose=True)
+    train_history = model.fit(X, y, epochs=1500, batch_size=8, verbose=True)
     print('finished training')
     # Plot training loss values
     plt.plot(train_history.history['loss'])
@@ -159,10 +228,24 @@ def save_predictions(y, json_path):
         json.dump(j, f)
 
 
-if __name__ == "__main__":
-    #main()
+def predict(model_path='./model/'):
     loader = load.serLoader()
-    model_path = '../some_models/CNN_model1/model/'
-    X, y = loader.load_training_data(four_class=False, mode='padded')
+    # X, y = loader.load_training_data(four_class=True, mode='padded')
+    X = loader.load_dev_data(mode='padded')
+    y_ = make_predictions(model_path, X)
+    # print_metrics(y, y_)
+    save_predictions(y_, './predictions.json')
+
+def training_metrics(model_path='./model/'):
+    loader = load.serLoader()
+    X, y = loader.load_training_data(four_class=True, mode='padded')
     y_ = make_predictions(model_path, X)
     print_metrics(y, y_)
+
+
+if __name__ == '__main__':
+    # main()
+    model_path = '../some_models/CNN_model7'
+    training_metrics()
+    predict()
+
